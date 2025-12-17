@@ -73,19 +73,24 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          cmake -S _deps/ncnn -B _deps/ncnn/build -G Ninja `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 `
-            -DCMAKE_C_COMPILER=cl `
-            -DCMAKE_CXX_COMPILER=cl `
-            -DNCNN_VULKAN=OFF `
-            -DNCNN_OPENMP=OFF `
-            -DNCNN_BUILD_TOOLS=OFF `
-            -DNCNN_BUILD_EXAMPLES=OFF `
-            -DNCNN_BUILD_BENCHMARK=OFF `
-            -DNCNN_BUILD_TESTS=OFF `
-            -DNCNN_SHARED_LIB=OFF `
-            -DCMAKE_INSTALL_PREFIX="$env:GITHUB_WORKSPACE/_deps/ncnn/install"
+          $args = @(
+            "-S", "_deps/ncnn",
+            "-B", "_deps/ncnn/build",
+            "-G", "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+            "-DCMAKE_C_COMPILER=cl",
+            "-DCMAKE_CXX_COMPILER=cl",
+            "-DNCNN_VULKAN=OFF",
+            "-DNCNN_OPENMP=OFF",
+            "-DNCNN_BUILD_TOOLS=OFF",
+            "-DNCNN_BUILD_EXAMPLES=OFF",
+            "-DNCNN_BUILD_BENCHMARK=OFF",
+            "-DNCNN_BUILD_TESTS=OFF",
+            "-DNCNN_SHARED_LIB=OFF",
+            "-DCMAKE_INSTALL_PREFIX=$env:GITHUB_WORKSPACE/_deps/ncnn/install"
+          )
+          cmake @args
           cmake --build _deps/ncnn/build --parallel 2
           cmake --install _deps/ncnn/build
 
@@ -112,12 +117,17 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          cmake -S . -B build -G Ninja `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DSD_BUILD_DEMO=OFF `
-            -DSD_BUILD_MCP=ON `
-            -DSD_USE_BUNDLED_NCNN=OFF `
-            -Dncnn_DIR="$env:GITHUB_WORKSPACE/_deps/ncnn/install/lib/cmake/ncnn"
+          $args = @(
+            "-S", ".",
+            "-B", "build",
+            "-G", "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DSD_BUILD_DEMO=OFF",
+            "-DSD_BUILD_MCP=ON",
+            "-DSD_USE_BUNDLED_NCNN=OFF",
+            "-Dncnn_DIR=$env:GITHUB_WORKSPACE/_deps/ncnn/install/lib/cmake/ncnn"
+          )
+          cmake @args
           cmake --build build --parallel 2
 
       - name: Build project (MCP only) (macOS/Linux)
