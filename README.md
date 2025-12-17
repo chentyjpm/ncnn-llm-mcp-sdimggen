@@ -2,6 +2,9 @@
 
 基于 **ncnn** 的 Stable Diffusion 推理小工具，用于给 **ncnn-llm** 适配“图片生成”能力（作为 MCP 工具/后端可执行程序被调用）。
 
+配合来使用的项目
+- ncnn_llm：https://github.com/futz12/ncnn_llm
+
 本项目的实现主要参考：
 - ncnn：https://github.com/Tencent/ncnn
 - Stable-Diffusion-NCNN：https://github.com/EdVince/Stable-Diffusion-NCNN
