@@ -1,22 +1,30 @@
-cmake_minimum_required(VERSION 3.1)
-project(StableDiffusionNCNN)
-
-set(DEBUG                   true)
-set(OPTIMIZATION_LEVEL      0)
-
-set(IS_SHOW_IMAGE true)
+cmake_minimum_required(VERSION 3.15)
+project(StableDiffusionNCNN LANGUAGES CXX)
 
 set(BIN_NAME "stable-diffusion-ncnn")
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-SET(CMAKE_PREFIX_PATH ncnn-20230517-ubuntu-2204/lib/cmake/ncnn)
+option(SD_BUILD_DEMO "Build file-based demo executable" ON)
+option(SD_BUILD_MCP "Build MCP stdio server executable" ON)
 
-FIND_PACKAGE(ncnn REQUIRED)
+# Linux-only convenience: use the bundled prebuilt ncnn shipped in this repo.
+# For Windows/macOS, build/install ncnn separately and pass -Dncnn_DIR=... (or -DCMAKE_PREFIX_PATH=...).
+option(SD_USE_BUNDLED_NCNN "Use bundled prebuilt ncnn (Linux only)" ON)
+if (SD_USE_BUNDLED_NCNN AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(_BUNDLED_NCNN_CMAKE "${CMAKE_SOURCE_DIR}/ncnn-20230517-ubuntu-2204/lib/cmake/ncnn")
+    if (EXISTS "${_BUNDLED_NCNN_CMAKE}/ncnnConfig.cmake")
+        list(APPEND CMAKE_PREFIX_PATH "${_BUNDLED_NCNN_CMAKE}")
+    endif()
+endif()
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/third_party)
+find_package(ncnn CONFIG REQUIRED)
+
+include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/third_party)
 
 set(CORE_SOURCES
     src/decoder_slover.cpp
@@ -33,17 +41,17 @@ set(MCP_SOURCES
     src/mcp_stdio_server.cpp
 )
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O${OPTIMIZATION_LEVEL}")
+if (SD_BUILD_DEMO)
+    add_executable(${BIN_NAME} ${CORE_SOURCES} ${DEMO_SOURCES})
+    target_link_libraries(${BIN_NAME} PRIVATE ncnn)
+    if (WIN32)
+        target_link_libraries(${BIN_NAME} PRIVATE psapi)
+    endif()
+endif()
 
-IF(DEBUG)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-    ADD_COMPILE_DEFINITIONS(DEBUG)
-ENDIF()
-
-ADD_EXECUTABLE(${BIN_NAME} ${CORE_SOURCES} ${DEMO_SOURCES})
-ADD_EXECUTABLE(${BIN_NAME}-mcp ${CORE_SOURCES} ${MCP_SOURCES})
-
-TARGET_LINK_LIBRARIES(${BIN_NAME} ncnn)
-TARGET_LINK_LIBRARIES(${BIN_NAME}-mcp ncnn)
+if (SD_BUILD_MCP)
+    add_executable(${BIN_NAME}-mcp ${CORE_SOURCES} ${MCP_SOURCES})
+    target_link_libraries(${BIN_NAME}-mcp PRIVATE ncnn)
+endif()
 
 FILE(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})

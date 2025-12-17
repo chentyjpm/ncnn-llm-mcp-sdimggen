@@ -5,6 +5,8 @@
  *          http://creativecommons.org/licenses/by/3.0/deed.en_US
  */
 
+#include <stddef.h>
+
 #if defined(_WIN32)
 #include <windows.h>
 #include <psapi.h>
