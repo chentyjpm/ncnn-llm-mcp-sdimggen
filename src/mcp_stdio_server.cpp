@@ -273,7 +273,7 @@ int main(int argc, char** argv)
                     {"type", "object"},
                     {"properties",
                      {
-                         {"prompt", {{"type", "string"}, {"description", "Positive prompt must in English"}}},
+                         {"prompt", {{"type", "string"}, {"description", "Positive prompt must in English in English in English"}}},
                          {"negative_prompt", {{"type", "string"}, {"description", "Negative prompt must in English"}, {"default", ""}}},
                          {"width", {{"type", "integer"}, {"enum", {256, 512}}, {"default", 256}}},
                          {"height", {{"type", "integer"}, {"enum", {256, 512}}, {"default", 256}}},
@@ -281,8 +281,8 @@ int main(int argc, char** argv)
                          {"seed", {{"type", "integer"}, {"default", 0}}},
                          {"mode", {{"type", "integer"}, {"enum", {0, 1}}, {"default", 0}}},
                          {"assets_dir", {{"type", "string"}, {"default", assets_dir}}},
-                         {"output", {{"type", "string"}, {"enum", {"base64", "file", "both"}}, {"default", "base64"}}},
-                         {"out_path", {{"type", "string"}, {"description", "When output includes file: write png to this path (optional)"}}},
+                         {"output", {{"type", "string"}, {"enum", {"base64", "file"}}, {"default", "base64"}}},
+                         {"out_path", {{"type", "string"}, {"description", "when output is file filepath (optional)"}}},
                      }},
                     {"required", {"prompt"}},
                 };
