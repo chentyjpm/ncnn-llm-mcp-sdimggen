@@ -1,8 +1,20 @@
 #include "diffusion_slover.h"
 #include <random>
 
-DiffusionSlover::DiffusionSlover(int h, int w, int mode)
+static std::string join_asset_path(const std::string& assets_dir, const std::string& filename)
 {
+	if (assets_dir.empty())
+		return filename;
+	if (assets_dir.back() == '/' || assets_dir.back() == '\\')
+		return assets_dir + filename;
+	return assets_dir + "/" + filename;
+}
+
+DiffusionSlover::DiffusionSlover(int h, int w, int mode) : DiffusionSlover(h, w, mode, "assets") {}
+
+DiffusionSlover::DiffusionSlover(int h, int w, int mode, const std::string& assets_dir)
+{
+	assets_dir_ = assets_dir;
 	net.opt.use_vulkan_compute = false;
 	net.opt.lightmode = true;
 	if (mode == 0)
@@ -21,20 +33,20 @@ DiffusionSlover::DiffusionSlover(int h, int w, int mode)
 	net.opt.use_packing_layout = true;
 
 	if (h == 512 && w == 512)
-		net.load_param("assets/UNetModel-512-512-MHA-fp16-opt.param");
+		net.load_param(join_asset_path(assets_dir_, "UNetModel-512-512-MHA-fp16-opt.param").c_str());
 	else if (h == 256 && w == 256)
-		net.load_param("assets/UNetModel-256-256-MHA-fp16-opt.param");
+		net.load_param(join_asset_path(assets_dir_, "UNetModel-256-256-MHA-fp16-opt.param").c_str());
 	else
 	{
 		generate_param(h, w);
-		net.load_param(("assets/tmp-UNetModel-" + std::to_string(h) + "-" + std::to_string(w) + "-MHA-fp16.param").c_str());
+		net.load_param(join_asset_path(assets_dir_, "tmp-UNetModel-" + std::to_string(h) + "-" + std::to_string(w) + "-MHA-fp16.param").c_str());
 	}
-	net.load_model("assets/UNetModel-MHA-fp16.bin");
+	net.load_model(join_asset_path(assets_dir_, "UNetModel-MHA-fp16.bin").c_str());
 
 	h_size = h / 8;
 	w_size = w / 8;
 
-	ifstream in("assets/log_sigmas.bin", ios::in | ios::binary);
+	ifstream in(join_asset_path(assets_dir_, "log_sigmas.bin"), ios::in | ios::binary);
 	in.read((char*)&log_sigmas, sizeof log_sigmas);
 	in.close();
 }
@@ -42,8 +54,8 @@ DiffusionSlover::DiffusionSlover(int h, int w, int mode)
 void DiffusionSlover::generate_param(int height, int width)
 {
 	string line;
-	ifstream diffuser_file("assets/UNetModel-base-MHA-fp16.param");
-	ofstream diffuser_file_new("assets/tmp-UNetModel-" + std::to_string(height) + "-" + std::to_string(width) + "-MHA-fp16.param");
+	ifstream diffuser_file(join_asset_path(assets_dir_, "UNetModel-base-MHA-fp16.param"));
+	ofstream diffuser_file_new(join_asset_path(assets_dir_, "tmp-UNetModel-" + std::to_string(height) + "-" + std::to_string(width) + "-MHA-fp16.param"));
 
 	int cnt = 0;
 	while (getline(diffuser_file, line))
@@ -259,14 +271,25 @@ ncnn::Mat DiffusionSlover::sampler(int seed, int step, ncnn::Mat& c, ncnn::Mat& 
 	ncnn::Mat x_mat = randn_4(seed % 1000);
 
 	// t_to_sigma
-	vector<float> sigma(step);
-	float delta = 0.0 - 999.0 / (step - 1);
-	for (int i = 0; i < step; i++) {
-		float t = 999.0 + i * delta;
-		int low_idx = floor(t);
-		int high_idx = ceil(t);
-		float w = t - low_idx;
-		sigma[i] = exp((1 - w) * log_sigmas[low_idx] + w * log_sigmas[high_idx]);
+	if (step <= 0)
+		step = 1;
+
+	vector<float> sigma;
+	sigma.reserve(step + 1);
+	if (step == 1)
+	{
+		sigma.push_back(exp(log_sigmas[999]));
+	}
+	else
+	{
+		float delta = 0.0f - 999.0f / (step - 1);
+		for (int i = 0; i < step; i++) {
+			float t = 999.0f + i * delta;
+			int low_idx = floor(t);
+			int high_idx = ceil(t);
+			float w = t - low_idx;
+			sigma.push_back(exp((1 - w) * log_sigmas[low_idx] + w * log_sigmas[high_idx]));
+		}
 	}
 	sigma.push_back(0.f);
 
@@ -276,12 +299,11 @@ ncnn::Mat DiffusionSlover::sampler(int seed, int step, ncnn::Mat& c, ncnn::Mat& 
 	// euler ancestral
 	{
 		for (int i = 0; i < sigma.size() - 1; i++) {
-			cout << "step:" << i << "\t\t";
-
 			double t1 = ncnn::get_current_time();
 			ncnn::Mat denoised = CFGDenoiser_CompVisDenoiser(x_mat, sigma[i], c, uc);
 			double t2 = ncnn::get_current_time();
-			cout << t2 - t1 << "ms" << endl;
+			(void)t1;
+			(void)t2;
 
 			float sigma_up = min(sigma[i + 1], sqrt(sigma[i + 1] * sigma[i + 1] * (sigma[i] * sigma[i] - sigma[i + 1] * sigma[i + 1]) / (sigma[i] * sigma[i])));
 			float sigma_down = sqrt(sigma[i + 1] * sigma[i + 1] - sigma_up * sigma_up);

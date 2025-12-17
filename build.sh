@@ -1,10 +1,8 @@
 
 
+set -e
 
-mkdir build
-cd build
-cmake ..
-make -j4
-cd ..
+cmake -S . -B build
+cmake --build build -j
 
-echo "Build completed."
+echo "Build completed: build/stable-diffusion-ncnn and build/stable-diffusion-ncnn-mcp"

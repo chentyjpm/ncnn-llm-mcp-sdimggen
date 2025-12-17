@@ -1,7 +1,19 @@
 #include "decoder_slover.h"
 
-DecodeSlover::DecodeSlover(int h, int w)
+static std::string join_asset_path(const std::string& assets_dir, const std::string& filename)
 {
+	if (assets_dir.empty())
+		return filename;
+	if (assets_dir.back() == '/' || assets_dir.back() == '\\')
+		return assets_dir + filename;
+	return assets_dir + "/" + filename;
+}
+
+DecodeSlover::DecodeSlover(int h, int w) : DecodeSlover(h, w, "assets") {}
+
+DecodeSlover::DecodeSlover(int h, int w, const std::string& assets_dir)
+{
+	assets_dir_ = assets_dir;
 	net.opt.use_vulkan_compute = false;
 	net.opt.use_winograd_convolution = false;
 	net.opt.use_sgemm_convolution = false;
@@ -12,22 +24,22 @@ DecodeSlover::DecodeSlover(int h, int w)
 	net.opt.use_packing_layout = true;
 
 	if (h == 512 && w == 512)
-		net.load_param("assets/AutoencoderKL-512-512-fp16-opt.param");
+		net.load_param(join_asset_path(assets_dir_, "AutoencoderKL-512-512-fp16-opt.param").c_str());
 	else if (h == 256 && w == 256)
-		net.load_param("assets/AutoencoderKL-256-256-fp16-opt.param");
+		net.load_param(join_asset_path(assets_dir_, "AutoencoderKL-256-256-fp16-opt.param").c_str());
 	else
 	{
 		generate_param(h, w);
-		net.load_param(("assets/tmp-AutoencoderKL-" + to_string(h) + "-" + to_string(w) + "-fp16.param").c_str());
+		net.load_param(join_asset_path(assets_dir_, "tmp-AutoencoderKL-" + to_string(h) + "-" + to_string(w) + "-fp16.param").c_str());
 	}
-	net.load_model("assets/AutoencoderKL-fp16.bin");
+	net.load_model(join_asset_path(assets_dir_, "AutoencoderKL-fp16.bin").c_str());
 }
 
 void DecodeSlover::generate_param(int height, int width)
 {
 	string line;
-	ifstream decoder_file("assets/AutoencoderKL-base-fp16.param");
-	ofstream decoder_file_new("assets/tmp-AutoencoderKL-" + std::to_string(height) + "-" + std::to_string(width) + "-fp16.param");
+	ifstream decoder_file(join_asset_path(assets_dir_, "AutoencoderKL-base-fp16.param"));
+	ofstream decoder_file_new(join_asset_path(assets_dir_, "tmp-AutoencoderKL-" + std::to_string(height) + "-" + std::to_string(width) + "-fp16.param"));
 
 	int cnt = 0;
 	while (getline(decoder_file, line))

@@ -15,6 +15,7 @@ class PromptSlover
 {
 public:
     PromptSlover();
+    explicit PromptSlover(const std::string& assets_dir);
 
     ncnn::Mat get_conditioning(string& prompt);
 
@@ -23,6 +24,7 @@ private:
     string whitespace_clean(string& text);
     vector<pair<string, float>> parse_prompt_attention(string& texts);
 
+    std::string assets_dir_ = "assets";
     map<string, int> tokenizer_token2idx;
     map<int, string> tokenizer_idx2token;
 

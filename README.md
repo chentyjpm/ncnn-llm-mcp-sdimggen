@@ -13,7 +13,9 @@
 
 ## 当前实现
 
-可执行程序：`stable-diffusion-ncnn`
+可执行程序：
+- `stable-diffusion-ncnn`：本地 demo（读取 `magic.txt`，写出 `result_*.png`）
+- `stable-diffusion-ncnn-mcp`：MCP stdio 服务端（stdin/stdout JSON-RPC）
 
 - 输入：运行目录下的 `magic.txt`
 - 模型：`assets/` 下的 ncnn `*.param` 与 `*.bin`（注意：仓库默认忽略提交 `assets/*.bin`）
@@ -69,6 +71,22 @@ cd build
 ```
 
 运行完成后会在当前目录生成 `result_*.png`。
+
+## MCP（stdio）使用
+
+启动 MCP 服务端（建议传绝对路径的 `assets_dir`，避免工作目录变化导致找不到模型）：
+
+```bash
+./build/stable-diffusion-ncnn-mcp --assets-dir ./assets
+```
+
+工具名：`sd_txt2img`
+
+- 输入：`prompt`/`negative_prompt`/`width`/`height`/`steps`/`seed`/`mode`/`assets_dir`
+- 输出：
+  - 默认返回 `image/png` 的 base64（`content[].type == "image"`）
+  - 可选 `output`：`base64` / `file` / `both`
+  - 当 `output` 包含 `file` 时，可用 `out_path` 指定写出路径；未指定则写到 `mcp_outputs/` 下，并在 `content` 里返回该路径（text）
 
 ## 模型与资产说明
 

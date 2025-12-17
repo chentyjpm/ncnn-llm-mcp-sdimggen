@@ -1,7 +1,19 @@
 #include "prompt_slover.h"
 
-PromptSlover::PromptSlover()
+static std::string join_asset_path(const std::string& assets_dir, const char* filename)
 {
+    if (assets_dir.empty())
+        return std::string(filename);
+    if (assets_dir.back() == '/' || assets_dir.back() == '\\')
+        return assets_dir + filename;
+    return assets_dir + "/" + filename;
+}
+
+PromptSlover::PromptSlover() : PromptSlover("assets") {}
+
+PromptSlover::PromptSlover(const std::string& assets_dir)
+{
+    assets_dir_ = assets_dir;
 	// load CLIP model
 	net.opt.use_vulkan_compute = false;
 	net.opt.use_winograd_convolution = false;
@@ -10,12 +22,12 @@ PromptSlover::PromptSlover()
 	net.opt.use_fp16_storage = true;
 	net.opt.use_fp16_arithmetic = true;
 	net.opt.use_packing_layout = true;
-	net.load_param("assets/FrozenCLIPEmbedder-fp16.param");
-	net.load_model("assets/FrozenCLIPEmbedder-fp16.bin");
+	net.load_param(join_asset_path(assets_dir_, "FrozenCLIPEmbedder-fp16.param").c_str());
+	net.load_model(join_asset_path(assets_dir_, "FrozenCLIPEmbedder-fp16.bin").c_str());
 
 	// read tokenizer dict
 	std::ifstream infile;
-	std::string pathname = "assets/vocab.txt";
+	std::string pathname = join_asset_path(assets_dir_, "vocab.txt");
 	infile.open(pathname.data());
 	std::string s;
 	int idx = 0;

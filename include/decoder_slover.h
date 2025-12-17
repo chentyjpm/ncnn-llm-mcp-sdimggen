@@ -17,6 +17,7 @@ class DecodeSlover
 {
 public:
     DecodeSlover(int h, int w);
+    DecodeSlover(int h, int w, const std::string& assets_dir);
 
     ncnn::Mat decode(ncnn::Mat sample);
 
@@ -29,4 +30,6 @@ private:
     const float _norm_[3] = { 127.5f, 127.5f, 127.5f };
 
     ncnn::Net net;
+
+    std::string assets_dir_ = "assets";
 };

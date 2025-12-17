@@ -18,6 +18,7 @@ class DiffusionSlover
 {
 public:
     DiffusionSlover(int h, int w, int mode);
+    DiffusionSlover(int h, int w, int mode, const std::string& assets_dir);
 
     ncnn::Mat sampler(int seed, int step, ncnn::Mat& c, ncnn::Mat& uc);
 
@@ -33,4 +34,6 @@ private:
     ncnn::Net net;
 
     int h_size, w_size;
+
+    std::string assets_dir_ = "assets";
 };

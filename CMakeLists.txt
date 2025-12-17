@@ -18,7 +18,20 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/third_party)
 
-FILE(GLOB_RECURSE sourcefiles "src/*.cpp")
+set(CORE_SOURCES
+    src/decoder_slover.cpp
+    src/diffusion_slover.cpp
+    src/prompt_slover.cpp
+    src/stb_image_write_impl.cpp
+)
+
+set(DEMO_SOURCES
+    src/opencv-mobile_ncnn-demo.cpp
+)
+
+set(MCP_SOURCES
+    src/mcp_stdio_server.cpp
+)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O${OPTIMIZATION_LEVEL}")
 
@@ -27,8 +40,10 @@ IF(DEBUG)
     ADD_COMPILE_DEFINITIONS(DEBUG)
 ENDIF()
 
-ADD_EXECUTABLE(${BIN_NAME} ${sourcefiles})
+ADD_EXECUTABLE(${BIN_NAME} ${CORE_SOURCES} ${DEMO_SOURCES})
+ADD_EXECUTABLE(${BIN_NAME}-mcp ${CORE_SOURCES} ${MCP_SOURCES})
 
 TARGET_LINK_LIBRARIES(${BIN_NAME} ncnn)
+TARGET_LINK_LIBRARIES(${BIN_NAME}-mcp ncnn)
 
 FILE(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})
