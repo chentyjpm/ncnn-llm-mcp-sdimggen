@@ -20,42 +20,138 @@
 依赖：
 - CMake
 - C++17 编译器
-- ncnn（`CMakeLists.txt` 里通过 `CMAKE_PREFIX_PATH` 查找）
+- ncnn（通过 `ncnn_DIR` / `CMAKE_PREFIX_PATH` 查找）
 - `third_party/stb_image_write.h`（用于写出 PNG，本仓库已包含）
 
-构建命令：
+快速构建命令（Linux + 使用仓库内预编译 ncnn 时）：
 
 ```bash
-cmake -S . -B build
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ```
 
 `CMakeLists.txt` 会把 `assets/` 复制到 `build/` 目录。
 
-### Windows / macOS 说明
+### Linux / macOS / Windows 编译说明
 
-本项目的核心依赖是 **ncnn**。Ubuntu/Linux 下可以选择使用仓库内自带的预编译 ncnn（仅 Linux 可用）；在 Windows/macOS 上建议自行编译/安装 ncnn，然后把 `ncnnConfig.cmake` 所在目录传给 CMake：
+本项目的核心依赖是 **ncnn**：
 
-- 方式 A：设置 `ncnn_DIR`
-  - `ncnn_DIR=<ncnn_install_prefix>/lib/cmake/ncnn`
-- 方式 B：设置 `CMAKE_PREFIX_PATH`
-  - `CMAKE_PREFIX_PATH=<ncnn_install_prefix>`
+- Linux 下默认会尝试使用仓库内自带的预编译 ncnn（`SD_USE_BUNDLED_NCNN=ON` 且仅 Linux 生效）
+- macOS / Windows 推荐自行编译安装 ncnn，然后通过 `ncnn_DIR` 让 CMake 找到 `ncnnConfig.cmake`
 
-示例（Windows PowerShell）：
+构建开关：
+- `SD_BUILD_DEMO`：是否构建本地 demo（默认 ON）
+- `SD_BUILD_MCP`：是否构建 MCP server（默认 ON）
+- `SD_USE_BUNDLED_NCNN`：Linux 下是否使用仓库内预编译 ncnn（默认 ON）
 
-```powershell
-cmake -S . -B build -Dncnn_DIR="C:/path/to/ncnn/lib/cmake/ncnn"
-cmake --build build --config Release
-```
+#### Linux（Ubuntu）
 
-示例（macOS / Linux）：
+方式 A：使用仓库内预编译 ncnn（默认）
 
 ```bash
-cmake -S . -B build -Dncnn_DIR=/path/to/ncnn/lib/cmake/ncnn
+sudo apt-get update
+sudo apt-get install -y cmake ninja-build
+
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ```
 
-如只想构建 MCP，可关闭 demo：
+方式 B：自行编译安装 ncnn（推荐用于非 Ubuntu 22.04 或预编译不兼容时）
+
+```bash
+sudo apt-get update
+sudo apt-get install -y cmake ninja-build git
+
+git clone --depth 1 --branch 20230517 https://github.com/Tencent/ncnn.git _deps/ncnn
+cmake -S _deps/ncnn -B _deps/ncnn/build -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+  -DNCNN_VULKAN=OFF \
+  -DNCNN_OPENMP=OFF \
+  -DNCNN_BUILD_TOOLS=OFF \
+  -DNCNN_BUILD_EXAMPLES=OFF \
+  -DNCNN_BUILD_BENCHMARK=OFF \
+  -DNCNN_BUILD_TESTS=OFF \
+  -DNCNN_SHARED_LIB=OFF \
+  -DCMAKE_INSTALL_PREFIX="$PWD/_deps/ncnn/install"
+cmake --build _deps/ncnn/build -j
+cmake --install _deps/ncnn/build
+
+cmake -S . -B build -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DSD_USE_BUNDLED_NCNN=OFF \
+  -Dncnn_DIR="$PWD/_deps/ncnn/install/lib/cmake/ncnn"
+cmake --build build -j
+```
+
+#### macOS（Apple Silicon / Intel）
+
+```bash
+brew update
+brew install cmake ninja git
+
+git clone --depth 1 --branch 20230517 https://github.com/Tencent/ncnn.git _deps/ncnn
+cmake -S _deps/ncnn -B _deps/ncnn/build -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+  -DNCNN_VULKAN=OFF \
+  -DNCNN_OPENMP=OFF \
+  -DNCNN_BUILD_TOOLS=OFF \
+  -DNCNN_BUILD_EXAMPLES=OFF \
+  -DNCNN_BUILD_BENCHMARK=OFF \
+  -DNCNN_BUILD_TESTS=OFF \
+  -DNCNN_SHARED_LIB=OFF \
+  -DCMAKE_INSTALL_PREFIX="$PWD/_deps/ncnn/install"
+cmake --build _deps/ncnn/build -j
+cmake --install _deps/ncnn/build
+
+cmake -S . -B build -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DSD_USE_BUNDLED_NCNN=OFF \
+  -Dncnn_DIR="$PWD/_deps/ncnn/install/lib/cmake/ncnn"
+cmake --build build -j
+```
+
+#### Windows（MSVC + Ninja）
+
+建议使用 “Developer PowerShell for VS 2022”（或先运行 `vcvars64.bat`）以确保 `cl.exe` 在 PATH 中。
+
+```powershell
+choco install -y cmake ninja git
+
+git clone --depth 1 --branch 20230517 https://github.com/Tencent/ncnn.git _deps/ncnn
+
+$prefix = (Resolve-Path ".").Path
+$args = @(
+  "-S","_deps/ncnn","-B","_deps/ncnn/build","-G","Ninja",
+  "-DCMAKE_BUILD_TYPE=Release",
+  "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+  "-DCMAKE_C_COMPILER=cl",
+  "-DCMAKE_CXX_COMPILER=cl",
+  "-DNCNN_VULKAN=OFF",
+  "-DNCNN_OPENMP=OFF",
+  "-DNCNN_BUILD_TOOLS=OFF",
+  "-DNCNN_BUILD_EXAMPLES=OFF",
+  "-DNCNN_BUILD_BENCHMARK=OFF",
+  "-DNCNN_BUILD_TESTS=OFF",
+  "-DNCNN_SHARED_LIB=OFF",
+  "-DCMAKE_INSTALL_PREFIX=$prefix/_deps/ncnn/install"
+)
+cmake @args
+cmake --build _deps/ncnn/build --parallel 2
+cmake --install _deps/ncnn/build
+
+$args = @(
+  "-S",".","-B","build","-G","Ninja",
+  "-DCMAKE_BUILD_TYPE=Release",
+  "-DSD_USE_BUNDLED_NCNN=OFF",
+  "-Dncnn_DIR=$prefix/_deps/ncnn/install/lib/cmake/ncnn"
+)
+cmake @args
+cmake --build build --parallel 2
+```
+
+#### 只构建 MCP（可选）
 
 ```bash
 cmake -S . -B build -DSD_BUILD_DEMO=OFF -DSD_BUILD_MCP=ON

@@ -191,7 +191,7 @@ vector<pair<string, float>> PromptSlover::parse_prompt_attention(string& texts)
 			}
 			round_brackets.pop();
 		}
-		else if (text == "]" and square_brackets.size() > 0) {
+		else if (text == "]" && square_brackets.size() > 0) {
 			for (int p = square_brackets.top(); p < res.size(); p++) {
 				res[p].second *= square_bracket_multiplier;
 			}
