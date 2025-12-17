@@ -12,6 +12,8 @@
 模型权重上传到了风佬的 
 [modelzoo](https://mirrors.sdu.edu.cn/ncnn_modelzoo)
 
+![MCP绘图](img/mcpimggen.png)
+
 ## 目标
 
 - 提供一个可离线运行的 Stable Diffusion（text-to-image）推理程序方便被 `ncnn-llm` 的 MCP 层集成与调度
