@@ -40,8 +40,8 @@
 依赖：
 - CMake
 - C++17 编译器
-- OpenCV 4（用于保存 PNG）
 - ncnn（`CMakeLists.txt` 里通过 `CMAKE_PREFIX_PATH` 查找）
+- `third_party/stb_image_write.h`（用于写出 PNG，本仓库已包含）
 
 构建命令：
 

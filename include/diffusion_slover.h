@@ -8,7 +8,6 @@
 #include <map>
 #include <cmath>
 #include <net.h>
-#include <opencv2/opencv.hpp>
 #include <algorithm>
 #include <ctime>
 #include <benchmark.h>

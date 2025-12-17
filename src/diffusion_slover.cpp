@@ -1,4 +1,5 @@
 #include "diffusion_slover.h"
+#include <random>
 
 DiffusionSlover::DiffusionSlover(int h, int w, int mode)
 {
@@ -96,11 +97,20 @@ void DiffusionSlover::generate_param(int height, int width)
 
 ncnn::Mat DiffusionSlover::randn_4(int seed)
 {
-	cv::Mat cv_x(cv::Size(w_size, h_size), CV_32FC4);
-	cv::RNG rng(seed);
-	rng.fill(cv_x, cv::RNG::NORMAL, 0, 1);
-	ncnn::Mat x_mat(w_size, h_size, 4, (void*)cv_x.data);
-	return x_mat.clone();
+	ncnn::Mat x_mat(w_size, h_size, 4);
+	std::mt19937 rng(static_cast<uint32_t>(seed));
+	std::normal_distribution<float> dist(0.0f, 1.0f);
+
+	for (int c = 0; c < 4; c++)
+	{
+		float* ptr = x_mat.channel(c);
+		for (int hw = 0; hw < h_size * w_size; hw++)
+		{
+			ptr[hw] = dist(rng);
+		}
+	}
+
+	return x_mat;
 }
 
 ncnn::Mat DiffusionSlover::CFGDenoiser_CompVisDenoiser(ncnn::Mat& input, float sigma, ncnn::Mat cond, ncnn::Mat uncond)

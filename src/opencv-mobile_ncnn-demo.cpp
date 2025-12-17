@@ -10,12 +10,14 @@
 #include "prompt_slover.h"
 #include "decoder_slover.h"
 #include "diffusion_slover.h"
-#include <opencv2/opencv.hpp>
 #include <algorithm>
 #include <ctime>
 #include "getmem.h"
 
 using namespace std;
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 int main()
 {
@@ -91,9 +93,11 @@ int main()
 	printf(" %.2lfG / %.2lfG\n", getCurrentRSS() / 1024.0 / 1024.0 / 1024.0, getPeakRSS() / 1024.0 / 1024.0 / 1024.0);
 
 	cout << "----------------[save]--------------------" << endl;
-	cv::Mat image(height, width, CV_8UC3);
-	x_samples_ddim.to_pixels(image.data, ncnn::Mat::PIXEL_RGB2BGR);
-	cv::imwrite("result_" + to_string(step) + "_" + to_string(seed) + "_" + to_string(height) + "x" + to_string(width) + ".png", image);
+	std::vector<unsigned char> image(height * width * 3);
+	x_samples_ddim.to_pixels(image.data(), ncnn::Mat::PIXEL_RGB);
+	const std::string out_path =
+		"result_" + to_string(step) + "_" + to_string(seed) + "_" + to_string(height) + "x" + to_string(width) + ".png";
+	stbi_write_png(out_path.c_str(), width, height, 3, image.data(), width * 3);
 
 	cout << "----------------[close]-------------------" << endl;
 	
