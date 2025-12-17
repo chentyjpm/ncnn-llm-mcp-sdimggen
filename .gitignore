@@ -6,6 +6,6 @@ cmake-build-debug
 .vscode
 .idea
 ncnn-ubuntu
-ncnn-20230517-ubuntu-2204
+ncnn
 *.zip
 assets/*.bin

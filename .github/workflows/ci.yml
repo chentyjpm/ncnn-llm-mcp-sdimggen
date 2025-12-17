@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    env:
+      NCNN_REF: "20230517"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build deps (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+
+      - name: Install build deps (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install cmake ninja
+
+      - name: Install build deps (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install -y cmake ninja
+
+      - name: Build ncnn (from source)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "${NCNN_REF}" https://github.com/Tencent/ncnn.git _deps/ncnn
+          cmake -S _deps/ncnn -B _deps/ncnn/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DNCNN_VULKAN=OFF \
+            -DNCNN_OPENMP=OFF \
+            -DNCNN_BUILD_TOOLS=OFF \
+            -DNCNN_BUILD_EXAMPLES=OFF \
+            -DNCNN_BUILD_BENCHMARK=OFF \
+            -DNCNN_BUILD_TESTS=OFF \
+            -DNCNN_SHARED_LIB=ON \
+            -DCMAKE_INSTALL_PREFIX="${PWD}/_deps/ncnn/install"
+          cmake --build _deps/ncnn/build --parallel 2
+          cmake --install _deps/ncnn/build
+
+      - name: Build project (MCP only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSD_BUILD_DEMO=OFF \
+            -DSD_BUILD_MCP=ON \
+            -DSD_USE_BUNDLED_NCNN=OFF \
+            -Dncnn_DIR="${PWD}/_deps/ncnn/install/lib/cmake/ncnn"
+          cmake --build build --parallel 2
+
+      - name: Verify outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -la build
+          test -f build/stable-diffusion-ncnn-mcp || test -f build/stable-diffusion-ncnn-mcp.exe
