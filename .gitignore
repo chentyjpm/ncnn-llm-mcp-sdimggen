@@ -1,11 +1,14 @@
 tmp
 build
+build-ninja
+build-manual-test
 install
 cmake-build-debug
 .cache
 .vscode
 .idea
-ncnn-ubuntu
+
 ncnn
 *.zip
 assets/*.bin
+_deps

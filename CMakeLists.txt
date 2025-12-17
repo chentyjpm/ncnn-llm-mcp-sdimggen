@@ -10,16 +10,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(SD_BUILD_DEMO "Build file-based demo executable" ON)
 option(SD_BUILD_MCP "Build MCP stdio server executable" ON)
 
-# Linux-only convenience: use the bundled prebuilt ncnn shipped in this repo.
-# For Windows/macOS, build/install ncnn separately and pass -Dncnn_DIR=... (or -DCMAKE_PREFIX_PATH=...).
-option(SD_USE_BUNDLED_NCNN "Use bundled prebuilt ncnn (Linux only)" ON)
-if (SD_USE_BUNDLED_NCNN AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(_BUNDLED_NCNN_CMAKE "${CMAKE_SOURCE_DIR}/ncnn-20230517-ubuntu-2204/lib/cmake/ncnn")
-    if (EXISTS "${_BUNDLED_NCNN_CMAKE}/ncnnConfig.cmake")
-        list(APPEND CMAKE_PREFIX_PATH "${_BUNDLED_NCNN_CMAKE}")
-    endif()
-endif()
-
 find_package(ncnn CONFIG REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)

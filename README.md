@@ -31,40 +31,49 @@
 - ncnn（通过 `ncnn_DIR` / `CMAKE_PREFIX_PATH` 查找）
 - `third_party/stb_image_write.h`（用于写出 PNG，本仓库已包含）
 
-快速构建命令（Linux + 使用仓库内预编译 ncnn 时）：
+### 推荐：使用 build.sh（一键、多平台）
+
+`build.sh` 会拉取并从源码编译 ncnn，然后构建本项目（默认只构建 MCP，可用于 CI/发布）。
+
+准备依赖：
+- Linux：`cmake`、`ninja`、`git`（以及可选 `python3`）
+- macOS：`brew install cmake ninja git`
+- Windows：建议在 **VS Developer PowerShell** 里启动 **Git Bash/MSYS2**（确保 `cl.exe` 在 PATH），并安装 `cmake`/`ninja`/`git`
+
+一键构建（默认：`--demo off --mcp on`）：
 
 ```bash
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
+./build.sh --parallel 4
 ```
 
-`CMakeLists.txt` 会把 `assets/` 复制到 `build/` 目录。
+常用参数：
+- 只构建 MCP：`./build.sh --demo off --mcp on`
+- 同时构建 demo：`./build.sh --demo on`
+- 指定生成器/目录：`./build.sh --generator Ninja --build-dir build-ninja`
+- 构建目录 generator 不一致时报错/清理：
+  - 自动清理（默认）：遇到 `CMakeCache` 的 generator 不一致会自动删除对应 build 目录后重配
+  - 强制清理：`./build.sh --clean on`
+  - 禁止清理（改为报错）：`./build.sh --clean off`
+
+关于 ncnn：
+- 默认从源码构建并安装到：`_deps/ncnn/install`
+- 如你已有自己安装的 ncnn，可不使用 `build.sh`，在手动 CMake 时通过 `ncnn_DIR` 指向 `ncnnConfig.cmake`
+
+### 手动 CMake（高级/自定义）
 
 ### Linux / macOS / Windows 编译说明
 
 本项目的核心依赖是 **ncnn**：
 
-- Linux 下默认会尝试使用仓库内自带的预编译 ncnn（`SD_USE_BUNDLED_NCNN=ON` 且仅 Linux 生效）
-- macOS / Windows 推荐自行编译安装 ncnn，然后通过 `ncnn_DIR` 让 CMake 找到 `ncnnConfig.cmake`
+- 建议自行编译安装 ncnn，然后通过 `ncnn_DIR` 让 CMake 找到 `ncnnConfig.cmake`
 
 构建开关：
-- `SD_BUILD_DEMO`：是否构建本地 demo（默认 ON）
+- `SD_BUILD_DEMO`：是否构建本地 demo（CMake 默认 ON；`build.sh` 默认 OFF）
 - `SD_BUILD_MCP`：是否构建 MCP server（默认 ON）
-- `SD_USE_BUNDLED_NCNN`：Linux 下是否使用仓库内预编译 ncnn（默认 ON）
 
 #### Linux（Ubuntu）
 
-方式 A：使用仓库内预编译 ncnn（默认）
-
-```bash
-sudo apt-get update
-sudo apt-get install -y cmake ninja-build
-
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
-```
-
-方式 B：自行编译安装 ncnn（推荐用于非 Ubuntu 22.04 或预编译不兼容时）
+自行编译安装 ncnn：
 
 ```bash
 sudo apt-get update
@@ -87,7 +96,6 @@ cmake --install _deps/ncnn/build
 
 cmake -S . -B build -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
-  -DSD_USE_BUNDLED_NCNN=OFF \
   -Dncnn_DIR="$PWD/_deps/ncnn/install/lib/cmake/ncnn"
 cmake --build build -j
 ```
@@ -115,7 +123,6 @@ cmake --install _deps/ncnn/build
 
 cmake -S . -B build -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
-  -DSD_USE_BUNDLED_NCNN=OFF \
   -Dncnn_DIR="$PWD/_deps/ncnn/install/lib/cmake/ncnn"
 cmake --build build -j
 ```
@@ -152,7 +159,6 @@ cmake --install _deps/ncnn/build
 $args = @(
   "-S",".","-B","build","-G","Ninja",
   "-DCMAKE_BUILD_TYPE=Release",
-  "-DSD_USE_BUNDLED_NCNN=OFF",
   "-Dncnn_DIR=$prefix/_deps/ncnn/install/lib/cmake/ncnn"
 )
 cmake @args
