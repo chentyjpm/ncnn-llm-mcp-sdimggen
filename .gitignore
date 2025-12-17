@@ -1,0 +1,11 @@
+tmp
+build
+install
+cmake-build-debug
+.cache
+.vscode
+.idea
+ncnn-ubuntu
+ncnn-20230517-ubuntu-2204
+*.zip
+assets/*.bin
