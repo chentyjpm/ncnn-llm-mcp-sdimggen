@@ -45,6 +45,7 @@ jobs:
           git clone --depth 1 --branch "${NCNN_REF}" https://github.com/Tencent/ncnn.git _deps/ncnn
           cmake -S _deps/ncnn -B _deps/ncnn/build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DNCNN_VULKAN=OFF \
             -DNCNN_OPENMP=OFF \
             -DNCNN_BUILD_TOOLS=OFF \
