@@ -38,11 +38,62 @@ jobs:
         run: |
           choco install -y cmake ninja
 
-      - name: Build ncnn (from source)
+      - name: Setup MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Fetch ncnn
         shell: bash
         run: |
           set -euo pipefail
           git clone --depth 1 --branch "${NCNN_REF}" https://github.com/Tencent/ncnn.git _deps/ncnn
+
+      - name: Patch ncnn headers (workaround)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("_deps/ncnn/src/layer/x86/x86_usability.h")
+          if not p.exists():
+              raise SystemExit(f"missing {p}")
+          s = p.read_text(encoding="utf-8", errors="ignore")
+          if "#include <cstdint>" in s:
+              raise SystemExit(0)
+          needle = "#include <math.h>\n"
+          if needle in s:
+              s = s.replace(needle, needle + "#include <cstdint>\n", 1)
+          else:
+              s = "#include <cstdint>\n" + s
+          p.write_text(s, encoding="utf-8")
+          print("patched", p)
+          PY
+
+      - name: Build ncnn (from source) (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cmake -S _deps/ncnn -B _deps/ncnn/build -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_COMPILER=cl `
+            -DNCNN_VULKAN=OFF `
+            -DNCNN_OPENMP=OFF `
+            -DNCNN_BUILD_TOOLS=OFF `
+            -DNCNN_BUILD_EXAMPLES=OFF `
+            -DNCNN_BUILD_BENCHMARK=OFF `
+            -DNCNN_BUILD_TESTS=OFF `
+            -DNCNN_SHARED_LIB=OFF `
+            -DCMAKE_INSTALL_PREFIX="$env:GITHUB_WORKSPACE/_deps/ncnn/install"
+          cmake --build _deps/ncnn/build --parallel 2
+          cmake --install _deps/ncnn/build
+
+      - name: Build ncnn (from source) (macOS/Linux)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
           cmake -S _deps/ncnn -B _deps/ncnn/build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
@@ -57,7 +108,20 @@ jobs:
           cmake --build _deps/ncnn/build --parallel 2
           cmake --install _deps/ncnn/build
 
-      - name: Build project (MCP only)
+      - name: Build project (MCP only) (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cmake -S . -B build -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DSD_BUILD_DEMO=OFF `
+            -DSD_BUILD_MCP=ON `
+            -DSD_USE_BUNDLED_NCNN=OFF `
+            -Dncnn_DIR="$env:GITHUB_WORKSPACE/_deps/ncnn/install/lib/cmake/ncnn"
+          cmake --build build --parallel 2
+
+      - name: Build project (MCP only) (macOS/Linux)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
