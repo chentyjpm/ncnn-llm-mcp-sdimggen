@@ -51,7 +51,7 @@ jobs:
             -DNCNN_BUILD_EXAMPLES=OFF \
             -DNCNN_BUILD_BENCHMARK=OFF \
             -DNCNN_BUILD_TESTS=OFF \
-            -DNCNN_SHARED_LIB=ON \
+            -DNCNN_SHARED_LIB=OFF \
             -DCMAKE_INSTALL_PREFIX="${PWD}/_deps/ncnn/install"
           cmake --build _deps/ncnn/build --parallel 2
           cmake --install _deps/ncnn/build
@@ -74,3 +74,53 @@ jobs:
           set -euo pipefail
           ls -la build
           test -f build/stable-diffusion-ncnn-mcp || test -f build/stable-diffusion-ncnn-mcp.exe
+
+      - name: Package artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+            BIN="build/stable-diffusion-ncnn-mcp.exe"
+            OUT="dist/stable-diffusion-ncnn-mcp-${RUNNER_OS}.zip"
+            test -f "${BIN}"
+            cp "${BIN}" dist/
+            (cd dist && 7z a -tzip "$(basename "${OUT}")" "$(basename "${BIN}")")
+          else
+            BIN="build/stable-diffusion-ncnn-mcp"
+            OUT="dist/stable-diffusion-ncnn-mcp-${RUNNER_OS}.tar.gz"
+            test -f "${BIN}"
+            cp "${BIN}" dist/
+            tar -C dist -czf "${OUT}" "$(basename "${BIN}")"
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stable-diffusion-ncnn-mcp-${{ runner.os }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: List artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          find dist -type f -maxdepth 3 -print
+
+      - name: Publish GitHub Release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*
