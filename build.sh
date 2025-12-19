@@ -11,6 +11,7 @@ GENERATOR="${GENERATOR:-}"                 # default: Ninja if available
 BUILD_DEMO="${BUILD_DEMO:-OFF}"            # ON|OFF
 BUILD_MCP="${BUILD_MCP:-ON}"               # ON|OFF
 PARALLEL="${PARALLEL:-2}"
+NCNN_OPENMP="${NCNN_OPENMP:-ON}"
 CLEAN="${CLEAN:-auto}" # auto|on|off (auto: clean build dir on generator mismatch)
 
 usage() {
@@ -22,6 +23,7 @@ Options:
   --generator <name>              CMake generator (default: Ninja if available)
   --build-dir <dir>               Build directory (default: build)
   --ncnn-ref <tag>                ncnn git tag/branch (default: 20230517)
+  --openmp <on|off>               Enable OpenMP for ncnn (default: on)
   --demo <on|off>                 Build demo executable (default: off)
   --mcp <on|off>                  Build MCP executable (default: on)
   --parallel <N>                  Build parallelism (default: 2)
@@ -29,7 +31,7 @@ Options:
   --help                          Show help
 
 Environment variables (optional):
-  NCNN_REF, BUILD_TYPE, BUILD_DIR, DEPS_DIR, GENERATOR, BUILD_DEMO, BUILD_MCP, PARALLEL, CLEAN
+  NCNN_REF, BUILD_TYPE, BUILD_DIR, DEPS_DIR, GENERATOR, BUILD_DEMO, BUILD_MCP, PARALLEL, NCNN_OPENMP, CLEAN
 
 Notes:
   - Windows builds require running from a VS Developer shell so that cl.exe is available.
@@ -129,6 +131,7 @@ while [[ $# -gt 0 ]]; do
     --generator) GENERATOR="$2"; shift 2;;
     --build-dir) BUILD_DIR="$2"; BUILD_DIR_EXPLICIT=1; shift 2;;
     --ncnn-ref) NCNN_REF="$2"; shift 2;;
+    --openmp) NCNN_OPENMP="$(onoff_to_cmake "$2")"; shift 2;;
     --demo) BUILD_DEMO="$(onoff_to_cmake "$2")"; shift 2;;
     --mcp) BUILD_MCP="$(onoff_to_cmake "$2")"; shift 2;;
     --parallel) PARALLEL="$2"; shift 2;;
@@ -202,7 +205,7 @@ PY
     -G "${GENERATOR}"
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5
     -DNCNN_VULKAN=OFF
-    -DNCNN_OPENMP=OFF
+    "-DNCNN_OPENMP=${NCNN_OPENMP}"
     -DNCNN_BUILD_TOOLS=OFF
     -DNCNN_BUILD_EXAMPLES=OFF
     -DNCNN_BUILD_BENCHMARK=OFF

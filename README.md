@@ -50,6 +50,7 @@
 - 只构建 MCP：`./build.sh --demo off --mcp on`
 - 同时构建 demo：`./build.sh --demo on`
 - 指定生成器/目录：`./build.sh --generator Ninja --build-dir build-ninja`
+- 启用多核（OpenMP）：`./build.sh --openmp on`
 - 构建目录 generator 不一致时报错/清理：
   - 自动清理（默认）：遇到 `CMakeCache` 的 generator 不一致会自动删除对应 build 目录后重配
   - 强制清理：`./build.sh --clean on`
@@ -58,6 +59,7 @@
 关于 ncnn：
 - 默认从源码构建并安装到：`_deps/ncnn/install`
 - 如你已有自己安装的 ncnn，可不使用 `build.sh`，在手动 CMake 时通过 `ncnn_DIR` 指向 `ncnnConfig.cmake`
+- 运行时线程数（可选）：设置 `SD_NCNN_NUM_THREADS`（或 `NCNN_NUM_THREADS`）覆盖默认线程数
 
 ### 手动 CMake（高级/自定义）
 
@@ -70,6 +72,7 @@
 构建开关：
 - `SD_BUILD_DEMO`：是否构建本地 demo（CMake 默认 ON；`build.sh` 默认 OFF）
 - `SD_BUILD_MCP`：是否构建 MCP server（默认 ON）
+OpenMP（多核）：手动编译 ncnn 时把 `-DNCNN_OPENMP=ON`（如环境不支持 OpenMP 则保持 OFF）。
 
 #### Linux（Ubuntu）
 

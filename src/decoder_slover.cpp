@@ -1,4 +1,5 @@
 #include "decoder_slover.h"
+#include "ncnn_thread_config.h"
 
 static std::string join_asset_path(const std::string& assets_dir, const std::string& filename)
 {
@@ -22,6 +23,9 @@ DecodeSlover::DecodeSlover(int h, int w, const std::string& assets_dir)
 	net.opt.use_fp16_arithmetic = false;
 	net.opt.use_bf16_storage = true;
 	net.opt.use_packing_layout = true;
+	const int num_threads = ncnn_num_threads_from_env();
+	if (num_threads > 0)
+		net.opt.num_threads = num_threads;
 
 	if (h == 512 && w == 512)
 		net.load_param(join_asset_path(assets_dir_, "AutoencoderKL-512-512-fp16-opt.param").c_str());

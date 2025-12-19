@@ -1,4 +1,5 @@
 #include "prompt_slover.h"
+#include "ncnn_thread_config.h"
 
 static std::string join_asset_path(const std::string& assets_dir, const char* filename)
 {
@@ -22,6 +23,9 @@ PromptSlover::PromptSlover(const std::string& assets_dir)
 	net.opt.use_fp16_storage = true;
 	net.opt.use_fp16_arithmetic = true;
 	net.opt.use_packing_layout = true;
+	const int num_threads = ncnn_num_threads_from_env();
+	if (num_threads > 0)
+		net.opt.num_threads = num_threads;
 	net.load_param(join_asset_path(assets_dir_, "FrozenCLIPEmbedder-fp16.param").c_str());
 	net.load_model(join_asset_path(assets_dir_, "FrozenCLIPEmbedder-fp16.bin").c_str());
 

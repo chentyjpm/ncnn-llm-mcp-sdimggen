@@ -1,4 +1,5 @@
 #include "diffusion_slover.h"
+#include "ncnn_thread_config.h"
 #include <random>
 
 static std::string join_asset_path(const std::string& assets_dir, const std::string& filename)
@@ -31,6 +32,9 @@ DiffusionSlover::DiffusionSlover(int h, int w, int mode, const std::string& asse
 	net.opt.use_fp16_storage = true;
 	net.opt.use_fp16_arithmetic = true;
 	net.opt.use_packing_layout = true;
+	const int num_threads = ncnn_num_threads_from_env();
+	if (num_threads > 0)
+		net.opt.num_threads = num_threads;
 
 	if (h == 512 && w == 512)
 		net.load_param(join_asset_path(assets_dir_, "UNetModel-512-512-MHA-fp16-opt.param").c_str());

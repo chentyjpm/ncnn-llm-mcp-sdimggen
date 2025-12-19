@@ -273,11 +273,11 @@ int main(int argc, char** argv)
                     {"type", "object"},
                     {"properties",
                      {
-                         {"prompt", {{"type", "string"}, {"description", "Positive prompt must in English in English in English"}}},
+                         {"prompt", {{"type", "string"}, {"description", "Positive prompt must in English in English in English 需要用英文填写"}}},
                          {"negative_prompt", {{"type", "string"}, {"description", "Negative prompt must in English"}, {"default", ""}}},
                          {"width", {{"type", "integer"}, {"enum", {256, 512}}, {"default", 256}}},
                          {"height", {{"type", "integer"}, {"enum", {256, 512}}, {"default", 256}}},
-                         {"steps", {{"type", "integer"}, {"minimum", 1}, {"maximum", 50}, {"default", 10}}},
+                         {"steps", {{"type", "integer"}, {"minimum", 1}, {"maximum", 50}, {"default", 20}}},
                          {"seed", {{"type", "integer"}, {"default", 0}}},
                          {"mode", {{"type", "integer"}, {"enum", {0, 1}}, {"default", 0}}},
                          {"assets_dir", {{"type", "string"}, {"default", assets_dir}}},
